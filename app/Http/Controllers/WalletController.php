@@ -11,6 +11,13 @@ use Illuminate\Support\Facades\DB;
 
 class WalletController extends Controller
 {
+    public function index()
+    {
+        $wallet = Wallet::firstOrCreate(['user_id' => 1], ['balance' => 0]);
+
+        return view('wallet.index', compact('wallet'));
+    }
+
     public function balance($walletId){
         $wallet = Wallet::findOrFail($walletId);
         return response()->json([
@@ -18,11 +25,17 @@ class WalletController extends Controller
             'balance' => $wallet->balance,
         ], 200);
     }
+
     public function transactions($walletId){
         $wallet = Wallet::findOrFail($walletId);
         $transactions = $wallet->transactions()->oderBy('created_at', 'desc')->get();
         return response()->json($trasactions, 200);
     }
+
+
+//   Concurrency Handling:
+//  - Uses database transactions (`DB::transaction`) to prevent race conditions
+//  - lockForUpdate() to lock the wallet row until the transaction is completed, ensures only one process can modify the balance at a time
 
     public function deposit(Request $request){
         $request->validate([
